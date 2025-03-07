@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Bangun Datar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #ffe6f2;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        .menu {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .menu button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        form {
+            display: none;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #d63384;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #ff66b2;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Aplikasi Bangun Datar</h1>
+
+<!-- Menu Utama -->
+<div class="menu">
+    <h2>Menu:</h2>
+    <button onclick="tampilkanForm()">1. Hitung dan Simpan Bangun Datar</button>
+    <button onclick="tampilkanData()">2. Tampilkan Data Bangun Datar</button>
+    <button onclick="hapusSemuaData()">3. Hapus Semua Data</button>
+    <button onclick="location.reload()">5. Keluar</button>
+</div>
+
+<!-- Form Input Bangun Datar -->
+<form id="bangunDatarForm">
+    <label for="jenis">Pilih Jenis Bangun Datar:</label>
+    <select id="jenis" required>
+        <option value="persegi">Persegi</option>
+        <option value="persegiPanjang">Persegi Panjang</option>
+        <option value="lingkaran">Lingkaran</option>
+    </select>
+    <br><br>
+    <label for="dimensi1">Dimensi 1:</label>
+    <input type="number" id="dimensi1" required>
+    <br><br>
+    <label for="dimensi2">Dimensi 2 (kosongkan jika tidak ada):</label>
+    <input type="number" id="dimensi2">
+    <br><br>
+    <button type="submit">Hitung dan Simpan</button>
+</form>
+
+<!-- Tabel Data Bangun Datar -->
+<table id="dataTable" style="display:none;">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nama</th>
+            <th>Dimensi 1</th>
+            <th>Dimensi 2</th>
+            <th>Luas</th>
+            <th>Keliling</th>
+            <th>Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Data akan ditampilkan di sini -->
+    </tbody>
+</table>
+
+<script>
+    let dataBangunDatar = JSON.parse(localStorage.getItem('bangunDatar')) || [];
+    let idCounter = dataBangunDatar.length ? Math.max(...dataBangunDatar.map(d => d.id)) + 1 : 1;
+
+    function tampilkanForm() {
+        document.getElementById('bangunDatarForm').style.display = "block";
+        document.getElementById('dataTable').style.display = "none";
+    }
+
+    function tampilkanData() {
+        document.getElementById('bangunDatarForm').style.display = "none";
+        document.getElementById('dataTable').style.display = "table";
+        updateTable();
+    }
+
+    document.getElementById('bangunDatarForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const jenis = document.getElementById('jenis').value;
+        const dimensi1 = parseFloat(document.getElementById('dimensi1').value);
+        const dimensi2 = parseFloat(document.getElementById('dimensi2').value) || 0;
+        let luas, keliling, nama;
+
+        if (jenis === 'persegi') {
+            luas = dimensi1 * dimensi1;
+            keliling = 4 * dimensi1;
+            nama = 'Persegi';
+        } else if (jenis === 'persegiPanjang') {
+            luas = dimensi1 * dimensi2;
+            keliling = 2 * (dimensi1 + dimensi2);
+            nama = 'Persegi Panjang';
+        } else if (jenis === 'lingkaran') {
+            luas = Math.PI * dimensi1 * dimensi1;
+            keliling = 2 * Math.PI * dimensi1;
+            nama = 'Lingkaran';
+        }
+
+        const data = {
+            id: idCounter++,
+            nama: nama,
+            dimensi1: dimensi1,
+            dimensi2: dimensi2,
+            luas: luas.toFixed(2),
+            keliling: keliling.toFixed(2)
+        };
+
+        dataBangunDatar.push(data);
+        localStorage.setItem('bangunDatar', JSON.stringify(dataBangunDatar));
+        updateTable();
+        this.reset();
+        tampilkanData();
+    });
+
+    function updateTable() {
+        const tbody = document.getElementById('dataTable').querySelector('tbody');
+        tbody.innerHTML = '';
+
+        dataBangunDatar.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.nama}</td>
+                <td>${item.dimensi1}</td>
+                <td>${item.dimensi2 || '-'}</td>
+                <td>${item.luas}</td>
+                <td>${item.keliling}</td>
+                <td>
+                    <button onclick="hapusData(${item.id})">Hapus</button>
+                    <button onclick="editData(${item.id})">Edit</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function hapusData(id) {
+    dataBangunDatar = dataBangunDatar.filter(item => item.id !== id);
+    localStorage.setItem('bangunDatar', JSON.stringify(dataBangunDatar));
+    updateTable();
+}
+
+function editData(id) {
+    const item = dataBangunDatar.find(d => d.id === id);
+    if (item) {
+        document.getElementById('jenis').value = 
+            item.nama.toLowerCase().replace(" ", "");
+        document.getElementById('dimensi1').value = item.dimensi1;
+        document.getElementById('dimensi2').value = item.dimensi2 || '';
+
+        // Hapus data sebelum disimpan ulang
+        hapusData(id);
+        tampilkanForm();
+    }
+}
+
+
+    function hapusSemuaData() {
+        if (confirm("Apakah Anda yakin ingin menghapus semua data?")) {
+            localStorage.removeItem('bangunDatar');
+            dataBangunDatar = [];
+            updateTable();
+        }
+    }
+
+    updateTable();
+</script>
+
+</body>
+</html>
+
